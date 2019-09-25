@@ -1,0 +1,158 @@
+---
+title: "Ratings Analysis"
+output:
+  html_document:
+    code_folding: hide
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Highest Rated movies of all time  
+
+The movie industry has been growing phenominally over the years. Some generes have definitely outperformed the others in terms of Gross revenues, the viewer ratings, the actors etc. For this analysis, I want to test the following Hypothesis:  
+
+#### The Action genre movies are most popular among the general viewers.  
+  In order to test the above hypothesis, we first import the movies and the ratings dataset.
+```{r message=FALSE}
+# Loading the required libraries
+packages <- c("ggplot2", "dplyr", "tidyr", "kableExtra")
+if (length(setdiff(packages, rownames(installed.packages()))) > 0) {
+  install.packages(setdiff(packages, rownames(installed.packages())))  
+}
+
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(kableExtra)
+
+setwd("C:/Users/anjali.gunjegai/Downloads/ml-latest-small")
+
+movies <- read.csv(file = "movies.csv",header = TRUE)
+ratings <- read.csv(file = "ratings.csv",header = TRUE)
+
+# Viewing the data
+
+    kable(head(movies))%>%
+  kable_styling(bootstrap_options = c("striped", "hover","condensed"))
+
+
+```
+  
+The movies data contains a list of movies and their respective genres. The dataset has the following attributes:
+```{r}
+kable(summary(movies))%>%
+    kable_styling(bootstrap_options = c("striped", "hover","condensed"))
+```
+
+1. There are no missing values in the dataset  
+2. A movie can fall under multiple categories  
+3. There are 9742 movies available  
+
+```{r}
+kable(head(ratings))%>%
+    kable_styling(bootstrap_options = c("striped", "hover","condensed"))
+```
+
+The ratings data consists the movies ratings given by various users.
+```{r}
+kable(summary(ratings))%>%
+    kable_styling(bootstrap_options = c("striped", "hover","condensed"))
+#length(unique(ratings$userId))
+```
+The summary of the ratings dataset shows:
+1. There exist reviews from 610 users
+2. Each user can rate multiple movies  
+
+Since there are a lot of overlapping genres, we will first separate them into individual genres and then delete the duplicate values  
+  
+  ##### Data Cleaning
+  
+```{r}
+# Splitting the genres
+library(splitstackshape)
+x<-cSplit(movies, "genres", sep="|")
+# converting the wide to long format
+data_long <- gather(x, ph, genres, genres_01:genres_10,factor_key=TRUE)
+
+movies_clean <- data_long%>%
+                 select(-ph)%>%
+                  filter(is.na(genres)==FALSE)%>%
+                distinct(movieId,title,genres)
+
+kable(head(movies_clean))%>%
+      kable_styling(bootstrap_options = c("striped", "hover","condensed"))
+```
+  
+  After converting the genre into a long format, the number of rows has increased considerably as a movie can fall under multiple genres. We will now perform some EDA on the new clean data  
+  
+
+```{r}
+ggplot(movies_clean,aes(x=
+                  factor(genres,
+                         levels=names(sort(table(genres),increasing=TRUE))
+                         ),fill=genres
+                )
+      ) + geom_bar() + coord_flip()+labs(title = "No. of movies in each genre",x="genres")
+```
+  
+    
+    The Drama and Comedy categories have the highest number of movies made. This could be because of overlap between the romantic comedies and drama movies being tagged under all comedy, drama ,and romance
+  
+  We will now join the movies and the ratings tables to get the ratings given by different users. Before joining however, we will aggregate the ratings table to a movieId level by averaging the user ratings
+  
+```{r}
+# calculating the average ratings
+avg_rating<- ratings%>%
+  group_by(movieId)%>%
+  summarize(avg_rating = median(rating,na.rm = TRUE))
+
+# joining with the movies table
+final <- merge(movies_clean,avg_rating,by.x = "movieId",by.y = "movieId")
+```
+  
+  Let us now see the median ratings for each of the genres along with the number of reviews for each genre 
+  
+```{r}
+p<- final %>%
+  group_by(genres)%>%
+  summarize(median_rating = median(avg_rating,na.rm = TRUE))%>%
+  arrange(desc(median_rating))
+
+
+ggplot(p,aes(x=reorder(genres, median_rating),y=median_rating,fill=genres))+
+  geom_bar(stat = "identity") + coord_flip()+
+  labs(title = " Average genre ratings",x="Genres")
+
+
+```
+  
+```{r}
+q<- final %>%
+  count(genres,sort = TRUE)
+
+
+ggplot(q,aes(x=reorder(genres, n),y=n,fill=genres))+
+  geom_bar(stat = "identity") + coord_flip()+
+  labs(title = " Movies in genre",x="Genres")
+```
+  
+  
+  As seen from the above plots, the Documentary, War and Film-Noir movies have the highest ratings of 4 on 5 on an average. The Action movies on the other hand have more number of movies but a lower rating (of 3). In order to get a better picture of the actual popularity let us take a weighted average of the number of movies and the ratings for each genre.  
+  
+```{r}
+l<- final%>%
+  group_by(genres)%>%
+  summarize(total= n(),rating= median(avg_rating))
+l$final_weight <- 0.3*l$total + l$rating*0.7
+
+ggplot(l,aes(x=reorder(genres, final_weight),y=final_weight,fill=genres))+
+  geom_bar(stat = "identity") + coord_flip()+
+  labs(title = " Final genre ratings",x="Genres")
+
+```
+  
+  
+  The final weights show that Drama genre is the most popular genre and action movies are not as popular as the hypothesis stated among the movielens reviewers
