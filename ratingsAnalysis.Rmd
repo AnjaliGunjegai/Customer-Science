@@ -18,7 +18,7 @@ The movie industry has been growing phenominally over the years. Some generes ha
   In order to test the above hypothesis, we first import the movies and the ratings dataset.
 ```{r message=FALSE}
 # Loading the required libraries
-packages <- c("ggplot2", "dplyr", "tidyr", "kableExtra")
+packages <- c("ggplot2", "dplyr", "tidyr", "kableExtra","splitstackshape")
 if (length(setdiff(packages, rownames(installed.packages()))) > 0) {
   install.packages(setdiff(packages, rownames(installed.packages())))  
 }
@@ -28,10 +28,10 @@ library(ggplot2)
 library(tidyr)
 library(kableExtra)
 
-setwd("C:/Users/anjali.gunjegai/Downloads/ml-latest-small")
+#setwd("C:/Users/anjali.gunjegai/Downloads/ml-latest-small")
 
-movies <- read.csv(file = "movies.csv",header = TRUE)
-ratings <- read.csv(file = "ratings.csv",header = TRUE)
+movies <- read.csv(file = "data/movies.csv",header = TRUE)
+ratings <- read.csv(file = "data/ratings.csv",header = TRUE)
 
 # Viewing the data
 

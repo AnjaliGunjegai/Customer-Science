@@ -453,13 +453,20 @@ summary {
 <h4>The Action genre movies are most popular among the general viewers.</h4>
 <p>In order to test the above hypothesis, we first import the movies and the ratings dataset.</p>
 <pre class="r"><code># Loading the required libraries
+packages &lt;- c(&quot;ggplot2&quot;, &quot;dplyr&quot;, &quot;tidyr&quot;, &quot;kableExtra&quot;,&quot;splitstackshape&quot;)
+if (length(setdiff(packages, rownames(installed.packages()))) &gt; 0) {
+  install.packages(setdiff(packages, rownames(installed.packages())))  
+}
+
 library(dplyr)
 library(ggplot2)
 library(tidyr)
 library(kableExtra)
 
-movies &lt;- read.csv(file = &quot;C:\\Users\\anjali.gunjegai\\Downloads\\ml-latest-small\\movies.csv&quot;,header = TRUE)
-ratings &lt;- read.csv(file = &quot;C:\\Users\\anjali.gunjegai\\Downloads\\ml-latest-small\\ratings.csv&quot;,header = TRUE)
+#setwd(&quot;C:/Users/anjali.gunjegai/Downloads/ml-latest-small&quot;)
+
+movies &lt;- read.csv(file = &quot;data/movies.csv&quot;,header = TRUE)
+ratings &lt;- read.csv(file = &quot;data/ratings.csv&quot;,header = TRUE)
 
 # Viewing the data
 
